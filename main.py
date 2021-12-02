@@ -1,6 +1,11 @@
-import discord, psutil, atexit, json, datetime, os, discord.ext.commands as commands
+import atexit, json, datetime, os, discord.ext.commands as commands
 from factions import Factions
 
+
+'''
+https://discord.com/api/oauth2/authorize?client_id=916069861837377546&permissions=8&scope=bot
+
+'''
 
 data = {}
 with open("data.json", "r") as file:
@@ -18,6 +23,7 @@ def main():
     today = datetime.datetime.today()
 
     file = open("data.json", "r")
+    # Backing up data.json
     backup = open(f"backups/data-{today.year}-{today.month}-{today.day}-{today.hour}_{today.minute}.json", "w+")
 
     backup.writelines(file.readlines())
