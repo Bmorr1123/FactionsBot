@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import atexit, json, datetime, os, discord.ext.commands as commands
 from factions import Factions
 
