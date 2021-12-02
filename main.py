@@ -14,7 +14,7 @@ with open("data.json", "r") as file:
 
 
 def on_close():
-    pass
+    print("Closing bot")
 
 
 def main():
