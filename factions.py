@@ -31,6 +31,10 @@ class Factions(commands.Cog):
         for message in reversed(messages):
             await message.delete()
 
+    @commands.command()
+    async def ping(self, ctx):
+        await ctx.reply("Pong!")
+
     # ------------------------------------------------------ Account Management ----------------------------------------
 
     # --------------------------------- User Commands --------------------------------
