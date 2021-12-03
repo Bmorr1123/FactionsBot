@@ -35,6 +35,10 @@ class Factions(commands.Cog):
     async def ping(self, ctx):
         await ctx.reply("Pongers!")
 
+    @commands.command()
+    async def spongebob(self, ctx):
+        await ctx.reply("The greatest show of all time!")
+
     # ------------------------------------------------------ Account Management ----------------------------------------
 
     # --------------------------------- User Commands --------------------------------
