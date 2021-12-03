@@ -33,7 +33,7 @@ class Factions(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await ctx.reply("Pong!")
+        await ctx.reply("Pongers!")
 
     # ------------------------------------------------------ Account Management ----------------------------------------
 
