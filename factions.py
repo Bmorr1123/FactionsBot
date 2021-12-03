@@ -43,9 +43,26 @@ class Factions(commands.Cog):
 
     # --------------------------------- User Commands --------------------------------
 
+    @commands.command(aliases=["c"])
+    async def create(self, ctx, arg):
+        await ctx.send("You have created the faction: ", arg)
+        pass
+
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
+        pass
 
+    @commands.command(aliases=["j"])
+    async def join(self, ctx):
+
+        pass
+
+    @commands.command(aliases=["p"])
+    async def promote(self, ctx, User: discord.User):
+        pass
+
+    @commands.command(aliases=["d"])
+    async def demote(self, ctx, User: discord.User):
         pass
 
     # --------------------------------- Admin Commands -------------------------------
