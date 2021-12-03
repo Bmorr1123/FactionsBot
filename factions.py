@@ -44,7 +44,7 @@ class Factions(commands.Cog):
     # --------------------------------- User Commands --------------------------------
 
     @commands.command(aliases=["c"])
-    async def create(self, ctx, arg):
+    async def create(self, ctx):
         await ctx.reply("You have created the faction: ")
         #pass
 
