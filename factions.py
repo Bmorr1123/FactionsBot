@@ -33,7 +33,7 @@ class Factions(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await ctx.reply("Pongers!")
+        await ctx.reply("Pong!")
 
     @commands.command()
     async def spongebob(self, ctx):
