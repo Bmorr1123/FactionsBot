@@ -109,6 +109,15 @@ class Factions(commands.Cog):
 
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
+    @commands.command(aliases=["r"])
+    async def register(self, ctx, arg):
+        uuid = self.getMcId(arg)
+        self.data["players"][str(ctx.author.id)] = {
+            "mc_username": arg,
+            "mc_uuid": uuid
+        }
+        pass
+
     @commands.command(aliases=["c"])
     async def create(self, ctx, *args):
         faction_name = " ".join(args)
