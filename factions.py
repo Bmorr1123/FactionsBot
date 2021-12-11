@@ -42,9 +42,11 @@ class Factions(commands.Cog):
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
     @commands.command()
-    async def request_join(self, ctx, faction_name: str):
+    async def request(self, ctx, faction_name: str):
         if faction_name in self.data["factions"]:
             await ctx.send("Nice")
+        else:
+            await ctx.send("Oops")
 
     # --------------------------------- User Commands --------------------------------
 
