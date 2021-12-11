@@ -52,7 +52,7 @@ class Factions(commands.Cog):
         if(data["success"]=="true"):
             return data["data"]["player"]["id"]
 
-    def create_faction(self, ctx, faction_name, faction_owner):
+    async def create_faction(self, ctx, faction_name, faction_owner):
         channel = ctx.channel
 
         # Role creation
@@ -122,7 +122,7 @@ class Factions(commands.Cog):
             await ctx.reply("Can't do that in this channel.")
             return
 
-        self.create_faction(ctx, faction_name, str(ctx.author.id))
+        await self.create_faction(ctx, faction_name, str(ctx.author.id))
         await ctx.reply(f"You have successfully created the faction: \"{faction_name}\"")
 
     @commands.command(aliases=["l"])
