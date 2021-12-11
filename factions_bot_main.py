@@ -10,7 +10,7 @@ https://discord.com/api/oauth2/authorize?client_id=916069861837377546&permission
 
 data = {}
 with open("data.json", "r") as file:
-    for key, value in json.load(file):
+    for key, value in json.load(file).items():
         data[key] = value
 
 
