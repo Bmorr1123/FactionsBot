@@ -39,7 +39,12 @@ class Factions(commands.Cog):
     async def spongebob(self, ctx):
         await ctx.reply("The greatest show of all time!")
 
-    # ------------------------------------------------------ Account Management ----------------------------------------
+    # ------------------------------------------------------ Faction Management ----------------------------------------
+
+    @commands.command()
+    async def request_join(self, ctx, faction_name: str):
+        if faction_name in self.data["factions"]:
+            await ctx.send("Nice")
 
     # --------------------------------- User Commands --------------------------------
 
