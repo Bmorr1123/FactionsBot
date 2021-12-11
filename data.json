@@ -1,3 +1,29 @@
 {
+    "players": {
+        "138027430693568512": {
+            "mc_username": "Bmorr13",
+            "mc_uuid": "2673a5ec-2259-46e3-95d4-4245c85c9bf0",
+            "faction": "Big PP Gang"
+        }
+    },
+    "factions": {
+        "Big PP Gang": {
+            "owner": null,
+            "players": {
+                "bmorr": {
 
+                },
+                "solvedsphinx": {
+
+                }
+            },
+            "wars": {
+                "Smol PP Gang": {
+                    "state": 0
+                }
+            },
+            "victories": 0,
+            "losses": 0
+        }
+    }
 }
