@@ -21,7 +21,7 @@ class Factions(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Logged in and listening as {self.bot.user}!")
-        await self.set_status("Managing Factions!")
+        await self.set_status("Managing Fartions!")
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
