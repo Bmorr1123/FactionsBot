@@ -48,7 +48,7 @@ class Factions(commands.Cog):
 
     def getMcId(self, mcUsername):
         web = requests.get("https://playerdb.co/api/player/minecraft/" + mcUsername)
-        data = json.loads(web)
+        data = str(json.loads(web))
         if(data["success"]=="true"):
             return data["data"]["player"]["id"]
 
