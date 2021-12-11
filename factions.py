@@ -41,15 +41,6 @@ class Factions(commands.Cog):
 
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
-    @commands.command()
-    async def request(self, ctx, faction_name: str):
-        if faction_name in self.data["factions"]:
-            await ctx.send("Nice")
-        else:
-            await ctx.send("Oops")
-
-    # --------------------------------- User Commands --------------------------------
-
     @commands.command(aliases=["c"])
     async def create(self, ctx):
         await ctx.reply("You have created the faction: ")
@@ -60,8 +51,12 @@ class Factions(commands.Cog):
         pass
 
     @commands.command(aliases=["j"])
-    async def join(self, ctx):
-
+    async def join(self, ctx, *args: [str]):
+        faction_name = " ".join(args)
+        if faction_name in self.data["factions"]:
+            await ctx.send("Nice")
+        else:
+            await ctx.send(f"Could not find the faction \"{faction_name}\"")
         pass
 
     @commands.command(aliases=["p"])
