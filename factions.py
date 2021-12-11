@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import discord
 from discord.ext import commands
+from random import randint
 from pprint import pprint as pp
 
 def check_if_admin(ctx):
@@ -43,37 +44,56 @@ class Factions(commands.Cog):
 
     # ------------------------------------------------------ Non-commands ----------------------------------------------
 
-    def create_faction(self, faction_name, faction_owner):
+    def create_faction(self, ctx, faction_name, faction_owner):
+        channel = ctx.channel
 
-        # text_overwrites = {
-        #     channel.guild.default_role: discord.PermissionOverwrite(read_messages=False),
-        # }
-        # voice_overwrites = {
-        #     channel.guild.default_role: discord.PermissionOverwrite(connect=False),
-        # }
-        # voice_channel = await channel.guild.create_voice_channel(
-        #     'Mafia Game Room',
-        #     category=channel.category,
-        #     overwrites=voice_overwrites
-        # )
-        # text_channel = await channel.guild.create_text_channel(
-        #     'Mafia-Text-Room',
-        #     category=channel.category,
-        #     overwrites=text_overwrites
-        # )
+        # Role creation
+        role = await channel.guild.create_role(
+            faction_name,
+            color=discord.Color.from_rgb(
+                randint(0, 255),
+                randint(0, 255),
+                randint(0, 255)
+            ),
+            reason=f"{ctx.author.name} requested a new faction be created."
+        )
+        # Permissions Overwrites
+        text_overwrites = {
+            channel.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            role: discord.PermissionOverwrite(read_messages=True)
+        }
+        voice_overwrites = {
+            channel.guild.default_role: discord.PermissionOverwrite(connect=False),
+            role: discord.PermissionOverwrite(connect=True)
+        }
+
+        # Channel creation
+        voice_channel = await channel.guild.create_voice_channel(
+            f"{faction_name.title()}-Voice",
+            category=channel.category,
+            overwrites=voice_overwrites,
+            reason=f"{ctx.author.name} requested a new faction be created."
+        )
+        text_channel = await channel.guild.create_text_channel(
+            f"{faction_name.lower()}-chat",
+            category=channel.category,
+            overwrites=text_overwrites,
+            reason=f"{ctx.author.name} requested a new faction be created."
+        )
 
         self.data["factions"][faction_name] = {
             "owner": faction_owner,
             "players": {
-                f"{faction_owner}": {
+                faction_owner: {
                     "permission_level": 4
                 }
             },
             "wars": {},
             "requests": [],
             "discord_info": {
-                "channel_id": 0,
-                "role_id": 0
+                "text_channel_id": text_channel.id,
+                "voice_channel_id": voice_channel.id,
+                "role_id": role.id
             },
             "victories": 0,
             "losses": 0
@@ -84,10 +104,18 @@ class Factions(commands.Cog):
     @commands.command(aliases=["c"])
     async def create(self, ctx, *args):
         faction_name = " ".join(args)
-        if faction_name not in self.data["factions"]:
-            await ctx.reply(f"You have created the faction: \"{faction_name}\"")
-        else:
+
+        # Conditions
+        if faction_name in self.data["factions"]:
             await ctx.reply(f"That faction already exists!")
+            return
+
+        if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
+            await ctx.reply("Can't do that in this channel.")
+            return
+
+        self.create_faction(ctx, faction_name, str(ctx.author.id))
+        await ctx.reply(f"You have successfully created the faction: \"{faction_name}\"")
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
