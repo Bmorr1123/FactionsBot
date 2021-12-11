@@ -13,6 +13,8 @@ class Factions(commands.Cog):
 
         self.data = data
 
+        self.channel = None
+
     # ---------------------------------------------------- Bot Management ----------------------------------------------
 
     async def set_status(self, string):
@@ -39,12 +41,53 @@ class Factions(commands.Cog):
     async def spongebob(self, ctx):
         await ctx.reply("The greatest show of all time!")
 
+    # ------------------------------------------------------ Non-commands ----------------------------------------------
+
+    def create_faction(self, faction_name, faction_owner):
+
+        # text_overwrites = {
+        #     channel.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        # }
+        # voice_overwrites = {
+        #     channel.guild.default_role: discord.PermissionOverwrite(connect=False),
+        # }
+        # voice_channel = await channel.guild.create_voice_channel(
+        #     'Mafia Game Room',
+        #     category=channel.category,
+        #     overwrites=voice_overwrites
+        # )
+        # text_channel = await channel.guild.create_text_channel(
+        #     'Mafia-Text-Room',
+        #     category=channel.category,
+        #     overwrites=text_overwrites
+        # )
+
+        self.data["factions"][faction_name] = {
+            "owner": faction_owner,
+            "players": {
+                f"{faction_owner}": {
+                    "permission_level": 4
+                }
+            },
+            "wars": {},
+            "requests": [],
+            "discord_info": {
+                "channel_id": 0,
+                "role_id": 0
+            },
+            "victories": 0,
+            "losses": 0
+        }
+
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
     @commands.command(aliases=["c"])
-    async def create(self, ctx):
-        await ctx.reply("You have created the faction: ")
-        #pass
+    async def create(self, ctx, *args):
+        faction_name = " ".join(args)
+        if faction_name not in self.data["factions"]:
+            await ctx.reply(f"You have created the faction: \"{faction_name}\"")
+        else:
+            await ctx.reply(f"That faction already exists!")
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
@@ -54,9 +97,10 @@ class Factions(commands.Cog):
     async def join(self, ctx, *args):
         faction_name = " ".join(args)
         if faction_name in self.data["factions"]:
-            await ctx.send("Nice")
+            await ctx.send(f"Requested to join the faction \"{faction_name}\".")
+            self.data["factions"][faction_name]["requests"].append(ctx.author.id)
         else:
-            await ctx.send(f"Could not find the faction \"{faction_name}\"")
+            await ctx.send(f"Could not find the faction \"{faction_name}\"!")
         pass
 
     @commands.command(aliases=["p"])
