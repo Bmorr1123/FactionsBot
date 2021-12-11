@@ -1,6 +1,9 @@
 #!/usr/bin/python
 import discord
+import requests
+import json
 from discord.ext import commands
+from random import randint
 from pprint import pprint as pp
 
 def check_if_admin(ctx):
@@ -12,6 +15,8 @@ class Factions(commands.Cog):
         self.bot = bot
 
         self.data = data
+
+        self.channel = None
 
     # ---------------------------------------------------- Bot Management ----------------------------------------------
 
@@ -39,12 +44,86 @@ class Factions(commands.Cog):
     async def spongebob(self, ctx):
         await ctx.reply("The greatest show of all time!")
 
+    # ------------------------------------------------------ Non-commands ----------------------------------------------
+
+    def getMcId(self, mcUsername):
+        web = requests.get("https://playerdb.co/api/player/minecraft/" + mcUsername)
+        data = json.loads(web)
+        if(data["success"]=="true"):
+            return data["data"]["player"]["id"]
+
+    def create_faction(self, ctx, faction_name, faction_owner):
+        channel = ctx.channel
+
+        # Role creation
+        role = await channel.guild.create_role(
+            faction_name,
+            color=discord.Color.from_rgb(
+                randint(0, 255),
+                randint(0, 255),
+                randint(0, 255)
+            ),
+            reason=f"{ctx.author.name} requested a new faction be created."
+        )
+        # Permissions Overwrites
+        text_overwrites = {
+            channel.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            role: discord.PermissionOverwrite(read_messages=True)
+        }
+        voice_overwrites = {
+            channel.guild.default_role: discord.PermissionOverwrite(connect=False),
+            role: discord.PermissionOverwrite(connect=True)
+        }
+
+        # Channel creation
+        voice_channel = await channel.guild.create_voice_channel(
+            f"{faction_name.title()}-Voice",
+            category=channel.category,
+            overwrites=voice_overwrites,
+            reason=f"{ctx.author.name} requested a new faction be created."
+        )
+        text_channel = await channel.guild.create_text_channel(
+            f"{faction_name.lower()}-chat",
+            category=channel.category,
+            overwrites=text_overwrites,
+            reason=f"{ctx.author.name} requested a new faction be created."
+        )
+
+        self.data["factions"][faction_name] = {
+            "owner": faction_owner,
+            "players": {
+                faction_owner: {
+                    "permission_level": 4
+                }
+            },
+            "wars": {},
+            "requests": [],
+            "discord_info": {
+                "text_channel_id": text_channel.id,
+                "voice_channel_id": voice_channel.id,
+                "role_id": role.id
+            },
+            "victories": 0,
+            "losses": 0
+        }
+
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
     @commands.command(aliases=["c"])
-    async def create(self, ctx):
-        await ctx.reply("You have created the faction: ")
-        #pass
+    async def create(self, ctx, *args):
+        faction_name = " ".join(args)
+
+        # Conditions
+        if faction_name in self.data["factions"]:
+            await ctx.reply(f"That faction already exists!")
+            return
+
+        if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
+            await ctx.reply("Can't do that in this channel.")
+            return
+
+        self.create_faction(ctx, faction_name, str(ctx.author.id))
+        await ctx.reply(f"You have successfully created the faction: \"{faction_name}\"")
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
@@ -54,9 +133,10 @@ class Factions(commands.Cog):
     async def join(self, ctx, *args):
         faction_name = " ".join(args)
         if faction_name in self.data["factions"]:
-            await ctx.send("Nice")
+            await ctx.send(f"Requested to join the faction \"{faction_name}\".")
+            self.data["factions"][faction_name]["requests"].append(ctx.author.id)
         else:
-            await ctx.send(f"Could not find the faction \"{faction_name}\"")
+            await ctx.send(f"Could not find the faction \"{faction_name}\"!")
         pass
 
     @commands.command(aliases=["p"])

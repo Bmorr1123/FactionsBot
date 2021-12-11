@@ -8,10 +8,10 @@
     },
     "factions": {
         "Big PP Gang": {
-            "owner": null,
+            "owner": "138027430693568512",
             "players": {
-                "bmorr": {
-
+                "138027430693568512": {
+                    "permission_level": 4
                 },
                 "solvedsphinx": {
 
@@ -21,6 +21,12 @@
                 "Smol PP Gang": {
                     "state": 0
                 }
+            },
+            "requests": [
+
+            ],
+            "discord_info": {
+
             },
             "victories": 0,
             "losses": 0
