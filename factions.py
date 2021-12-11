@@ -1,5 +1,7 @@
 #!/usr/bin/python
 import discord
+import requests
+import json
 from discord.ext import commands
 from pprint import pprint as pp
 
@@ -42,6 +44,12 @@ class Factions(commands.Cog):
         await ctx.reply("The greatest show of all time!")
 
     # ------------------------------------------------------ Non-commands ----------------------------------------------
+
+    def getMcId(self, mcUsername):
+        web = requests.get("https://playerdb.co/api/player/minecraft/" + mcUsername)
+        data = json.loads(web)
+        if(data["success"]=="true"):
+            return data["data"]["player"]["id"]
 
     def create_faction(self, faction_name, faction_owner):
 
