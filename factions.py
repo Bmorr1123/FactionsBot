@@ -21,7 +21,7 @@ class Factions(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"Logged in and listening as {self.bot.user}!")
-        await self.set_status("Managing Fartions!")
+        await self.set_status("Managing Factions!")
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
@@ -33,7 +33,7 @@ class Factions(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await ctx.reply("Pongers!")
+        await ctx.reply("Pong!")
 
     @commands.command()
     async def spongebob(self, ctx):
@@ -51,7 +51,7 @@ class Factions(commands.Cog):
         pass
 
     @commands.command(aliases=["j"])
-    async def join(self, ctx, *args: [str]):
+    async def join(self, ctx, *args):
         faction_name = " ".join(args)
         if faction_name in self.data["factions"]:
             await ctx.send("Nice")
