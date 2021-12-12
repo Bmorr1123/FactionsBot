@@ -17,10 +17,13 @@
             "players": {
                 "138027430693568512": {
                     "permission_level": 4
+                },
+                "405528235816779776": {
+                    "permission_level": 0
                 }
             },
             "requests": {},
-            "wars": {},
+             "wars": {},
             "declarations": {},
             "discord_info": {
                 "role_id": 919365714522021929,

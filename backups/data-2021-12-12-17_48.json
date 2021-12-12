@@ -19,7 +19,9 @@
                     "permission_level": 4
                 }
             },
-            "requests": {},
+            "requests": {
+                "919721951616958464": "405528235816779776"
+            },
             "wars": {},
             "declarations": {},
             "discord_info": {

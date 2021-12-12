@@ -48,7 +48,7 @@ class Factions(commands.Cog):
 
     def getMcId(self, mc_username):
         web = requests.get("https://playerdb.co/api/player/minecraft/" + mc_username)
-        data = str(json.loads(web.content.decode()))
+        data = json.loads(web.content.decode())
         if data["success"]:
             return data["data"]["player"]["id"]
         return None
@@ -127,24 +127,30 @@ class Factions(commands.Cog):
             "losses": 0
         }
 
-    def is_faction_channel(self, channel):
+    def is_faction_channel(self, channel: discord.TextChannel):
         for faction, data in self.data["factions"].items():
-            if str(channel.id) == data["discord_info"]["text_channel_id"]:
+            if channel.id == data["discord_info"]["text_channel_id"]:
                 return True
         return False
 
     async def increment_permission(self, ctx, user: discord.User, increment_by):
         pid, cid = str(ctx.author.id), str(user.id)
         action = "promote" if increment_by > 0 else "demote"
-        for faction in self.data["factions"]:
+
+        if cid == pid:
+            await ctx.reply(f"You can't {action} yourself!")
+            return
+
+        for name, faction in self.data["factions"].items():
             players = faction["players"]
             if pid in players and cid in players:
                 if not players[pid]["permission_level"] >= players[cid]["permission_level"] + increment_by:
                     await ctx.reply(f"You do not have permission to {action} this player.")
+                    return
                 new_cpl = players[cid]["permission_level"] + increment_by
 
                 if 0 <= new_cpl <= 4:
-                    faction["players"][user.id]["permission_level"] = new_cpl
+                    faction["players"][cid]["permission_level"] = new_cpl
                     if new_cpl == 4:
                         faction["owner"] = cid
                         players[pid]["permission_level"] -= 1
@@ -152,6 +158,7 @@ class Factions(commands.Cog):
                 else:
                     await ctx.reply(f"<@{cid}> cannot be {action}d to level {new_cpl}!")
                 return
+        await ctx.reply("Something went wrong. Please @Bmorr")
 
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
@@ -208,11 +215,13 @@ class Factions(commands.Cog):
                     await ctx.reply("You can't leave the faction as the owner!")
                     return
 
-                del self.data["factions"][name][pid]
-                await ctx.delete()
+                candidate = ctx.channel.guild.get_member(ctx.author.id)
+                await candidate.remove_roles(ctx.guild.get_role(faction["discord_info"]["role_id"]))
+                del self.data["factions"][name]["players"][pid]
+                await ctx.message.delete()
                 await ctx.send(f"<@{ctx.author.id}> left the faction.")
                 return
-
+            print(f"Not in {name}")
         await ctx.reply("Could not find user in a faction! Please @Bmorr")
 
     @commands.command(aliases=["j"])
@@ -227,10 +236,9 @@ class Factions(commands.Cog):
             await ctx.send(f"You have already applied to join this faction! \"{faction_name}\"!")
             return
 
-        for faction, data in self.data["factions"].items():
-            if str(ctx.author.id) in data["players"]:
-                await ctx.send(f"You cannot apply to join a new faction because you are already in \"{faction}\"!")
-                return
+        if faction := self.find_users_faction(ctx.author):
+            await ctx.send(f"You cannot apply to join a new faction because you are already in \"{faction}\"!")
+            return
 
         await ctx.send(f"Requested to join the faction \"{faction_name}\".")
 
@@ -251,6 +259,26 @@ class Factions(commands.Cog):
         await confirmation_message.add_reaction("❌")
 
         self.data["factions"][faction_name]["requests"][str(confirmation_message.id)] = str(ctx.author.id)
+
+    @commands.command()
+    async def kick(self, ctx, user: discord.User):
+        pid, cid = str(ctx.author.id), str(user.id)
+        for name, faction in self.data["factions"].items():
+            players = faction["players"]
+            if pid in players and cid in players:
+                if not players[pid]["permission_level"] > players[cid]["permission_level"]:
+                    await ctx.reply(f"You do not have permission to kick this player.")
+                    return
+
+                candidate = ctx.channel.guild.get_member(int(cid))
+                await candidate.remove_roles(ctx.guild.get_role(faction["discord_info"]["role_id"]))
+                if randint(0, 24):
+                    await candidate.send(f"You've been kicked from {name}!")
+                else:
+                    await candidate.send(f"{name} doesn't want you anymore. L + ratio + ur malding + ur mom's fat")
+                del faction["players"][cid]
+                await ctx.send(f"<@{pid}> kicked <@{cid}>!")
+                await ctx.message.delete()
 
     @commands.command(aliases=["b"])
     async def declare(self, ctx, *args):
@@ -314,13 +342,15 @@ class Factions(commands.Cog):
             return
 
         candidate_id = int(faction["requests"][str(payload.message_id)])
+        channel = self.bot.get_channel(payload.channel_id)
         if faction["players"][str(payload.member.id)]["permission_level"] > 0:
             nothing = False
             if payload.emoji.name == "✅":
-                faction["players"][candidate_id] = {
+                faction["players"][str(candidate_id)] = {
                     "permission_level": 0
                 }
-                await self.bot.get_user(candidate_id).add_roles(self.bot.get_role(faction["discord_info"]["role_id"]))
+                await channel.guild.get_member(candidate_id).add_roles(channel.guild.get_role(faction["discord_info"]["role_id"]))
+                await channel.send(f"<@{candidate_id}> was accepted by <@{str(payload.member.id)}>!")
             elif payload.emoji.name == "❌":
                 await self.bot.get_user(candidate_id).send(f"Sorry, you have been denied from joining {faction_name}.")
             else:

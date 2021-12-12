@@ -13,9 +13,12 @@
     },
     "factions": {
         "Big PP Gang": {
-            "owner": "138027430693568512",
+            "owner": "405528235816779776",
             "players": {
                 "138027430693568512": {
+                    "permission_level": 2
+                },
+                "405528235816779776": {
                     "permission_level": 4
                 }
             },
