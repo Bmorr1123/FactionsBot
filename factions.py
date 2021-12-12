@@ -53,6 +53,20 @@ class Factions(commands.Cog):
             return data["data"]["player"]["id"]
         return None
 
+    def find_users_faction(self, user):
+        id = 0
+        if isinstance(user, discord.User):
+            id = str(user.id)
+        elif isinstance(user, int):
+            id = str(user)
+        elif isinstance(user, str):
+            id = user
+
+        for name, faction in self.data["factions"].items():
+            if id in faction["players"].keys():
+                return name
+        return None
+
     async def create_faction(self, ctx, faction_name, faction_owner):
         channel = ctx.channel
 
@@ -119,6 +133,26 @@ class Factions(commands.Cog):
                 return True
         return False
 
+    async def increment_permission(self, ctx, user: discord.User, increment_by):
+        pid, cid = str(ctx.author.id), str(user.id)
+        action = "promote" if increment_by > 0 else "demote"
+        for faction in self.data["factions"]:
+            players = faction["players"]
+            if pid in players and cid in players:
+                if not players[pid]["permission_level"] >= players[cid]["permission_level"] + increment_by:
+                    await ctx.reply(f"You do not have permission to {action} this player.")
+                new_cpl = players[cid]["permission_level"] + increment_by
+
+                if 0 <= new_cpl <= 4:
+                    faction["players"][user.id]["permission_level"] = new_cpl
+                    if new_cpl == 4:
+                        faction["owner"] = cid
+                        players[pid]["permission_level"] -= 1
+                    await ctx.reply(f"<@{cid}> has been {action}d to level {new_cpl}")
+                else:
+                    await ctx.reply(f"<@{cid}> cannot be {action}d to level {new_cpl}!")
+                return
+
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
     @commands.command(aliases=["r"])
@@ -161,10 +195,25 @@ class Factions(commands.Cog):
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
+
+        pid = f"{ctx.author.id}"
+
+        if not self.is_faction_channel(ctx.channel):
+            await ctx.reply("You must be in faction chat to use this command!")
+            return
+
         for name, faction in self.data["factions"].items():
-            if f"{ctx.author.id}" in faction["players"].keys():
-                await ctx.reply("You are already in a faction!")
+            if pid in faction["players"].keys():
+                if faction["owner"] == pid:
+                    await ctx.reply("You can't leave the faction as the owner!")
+                    return
+
+                del self.data["factions"][name][pid]
+                await ctx.delete()
+                await ctx.send(f"<@{ctx.author.id}> left the faction.")
                 return
+
+        await ctx.reply("Could not find user in a faction! Please @Bmorr")
 
     @commands.command(aliases=["j"])
     async def join(self, ctx, *args):
@@ -192,6 +241,7 @@ class Factions(commands.Cog):
             color=discord.Colour.from_rgb(255//2, 0, 255),
             description=f"Would you like to accept <@{ctx.author.id}> into your faction?"
         )
+
         embed.set_image(url=f"{self.data['players'][str(ctx.author.id)]['pfp']}")
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
 
@@ -229,24 +279,14 @@ class Factions(commands.Cog):
         pass
 
     @commands.command(aliases=["p"])
-    async def promote(self, ctx, User: discord.User):
-        for faction in self.data["factions"]:
-            if User.id in faction["players"]:
-                faction["players"][User.id]["permission_level"] += 1
-                await ctx.reply(
-                    f"<@{ctx.author.id}> has been promoted to level {faction['players'][User.id]['permission_level']}")
-                return
+    async def promote(self, ctx, user: discord.User):
+        await self.increment_permission(ctx, user, +1)
 
     @commands.command(aliases=["d"])
-    async def demote(self, ctx, User: discord.User):
-        for faction in self.data["factions"]:
-            if User.id in faction["players"]:
-                faction["players"][User.id]["permission_level"] -= 1
-                await ctx.reply(
-                    f"<@{ctx.author.id}> has been demoted to level {faction['players'][User.id]['permission_level']}")
-                return
+    async def demote(self, ctx, user: discord.User):
+        await self.increment_permission(ctx, user, -1)
 
-    # --------------------------------- Admin Commands -------------------------------
+    # ---------------------------------------------- Admin Commands ----------------------------------------------------
 
     @commands.command(aliases=["t"])
     @commands.check(check_if_admin)
@@ -257,7 +297,10 @@ class Factions(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        faction_channels = {str(value["discord_info"]["text_channel_id"]): name for name, value in self.data["factions"].items()}
+        faction_channels = {
+            str(value["discord_info"]["text_channel_id"]): name
+            for name, value in self.data["factions"].items()
+        }
 
         if str(payload.channel_id) not in faction_channels:
             return
