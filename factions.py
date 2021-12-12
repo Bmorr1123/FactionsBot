@@ -283,17 +283,18 @@ class Factions(commands.Cog):
     @commands.command(aliases=["b"])
     async def declare(self, ctx, *args):
         faction_name = " ".join(args)
+        src_faction = self.find_users_faction(str(ctx.author.id))
         if faction_name in self.data["factions"]:
             await ctx.send(f"Requested to start a war \"{faction_name}\".")
             id = self.data["factions"][faction_name]["discord_info"]["text_channel_id"]
             channel = self.bot.get_channel(id)
             embed = discord.Embed(
-                title="User is requesting to start a war!",
+                title=f"Would you like to accept a war with {src_faction}?",
                 color=discord.Colour.from_rgb(255 // 2, 0, 255),
-                description=f"Would you like to accept <@{ctx.author.id}> into your faction?"
+                #description=f"Would you like to accept a war with {src_faction}?"
             )
             embed.set_image(url=f"{self.data['players'][str(ctx.author.id)]['pfp']}")
-            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            embed.set_author(name=ctx.author.name + " is requesting to start a war!", icon_url=ctx.author.avatar_url)
 
             confirmation_message: discord.Message = await channel.send(embed=embed)
 
