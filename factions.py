@@ -230,11 +230,21 @@ class Factions(commands.Cog):
 
     @commands.command(aliases=["p"])
     async def promote(self, ctx, User: discord.User):
-        pass
+        for faction in self.data["factions"]:
+            if User.id in faction["players"]:
+                faction["players"][User.id]["permission_level"] += 1
+                await ctx.reply(
+                    f"<@{ctx.author.id}> has been promoted to level {faction['players'][User.id]['permission_level']}")
+                return
 
     @commands.command(aliases=["d"])
     async def demote(self, ctx, User: discord.User):
-        pass
+        for faction in self.data["factions"]:
+            if User.id in faction["players"]:
+                faction["players"][User.id]["permission_level"] -= 1
+                await ctx.reply(
+                    f"<@{ctx.author.id}> has been demoted to level {faction['players'][User.id]['permission_level']}")
+                return
 
     # --------------------------------- Admin Commands -------------------------------
 
