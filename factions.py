@@ -182,6 +182,32 @@ class Factions(commands.Cog):
             await ctx.send(f"Could not find the faction \"{faction_name}\"!")
         pass
 
+    @commands.command(aliases=["b"])
+    async def declare(self, ctx, *args):
+        faction_name = " ".join(args)
+        if faction_name in self.data["factions"]:
+            await ctx.send(f"Requested to start a war \"{faction_name}\".")
+            id = self.data["factions"][faction_name]["discord_info"]["text_channel_id"]
+            channel = self.bot.get_channel(id)
+            embed = discord.Embed(
+                title="User is requesting to start a war!",
+                color=discord.Colour.from_rgb(255 // 2, 0, 255),
+                description=f"Would you like to accept <@{ctx.author.id}> into your faction?"
+            )
+            embed.set_image(url=f"{self.data['players'][str(ctx.author.id)]['pfp']}")
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+
+            confirmation_message: discord.Message = await channel.send(embed=embed)
+
+            await confirmation_message.add_reaction("✅")
+            await confirmation_message.add_reaction("❌")
+
+            self.data["factions"][faction_name]["requests"][str(confirmation_message.id)] = str(ctx.author.id)
+
+        else:
+            await ctx.send(f"Could not find the faction \"{faction_name}\"!")
+        pass
+
     @commands.command(aliases=["p"])
     async def promote(self, ctx, User: discord.User):
         pass
