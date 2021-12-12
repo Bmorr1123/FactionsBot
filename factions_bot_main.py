@@ -63,9 +63,9 @@ def main():
     # Bot stuff
     bot = commands.Bot(command_prefix=config["prefix"])
 
-    @bot.event
-    async def on_command_error(ctx, error):
-        await ctx.send(error)
+    #@bot.event
+    #async def on_command_error(ctx, error):
+    #    await ctx.send(error)
 
     cogs = [Factions(bot, data)]
     for cog in cogs:

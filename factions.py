@@ -48,9 +48,10 @@ class Factions(commands.Cog):
 
     def getMcId(self, mcUsername):
         web = requests.get("https://playerdb.co/api/player/minecraft/" + mcUsername)
-        data = str(json.loads(web))
-        if(data["success"]=="true"):
+        data = json.loads(web.content.decode())
+        if(data["success"]==True):
             return data["data"]["player"]["id"]
+        return None
 
     async def create_faction(self, ctx, faction_name, faction_owner):
         channel = ctx.channel
@@ -111,12 +112,20 @@ class Factions(commands.Cog):
 
     @commands.command(aliases=["r"])
     async def register(self, ctx, arg):
+        if str(ctx.author.id) in self.data["players"]:
+            await ctx.reply(f"You have already registered as {self.data['players'][str(ctx.author.id)]['mc_username']}")
+            return
         uuid = self.getMcId(arg)
+        if uuid == None:
+            await ctx.reply(f"This user doesn't exist")
+            return
+
         self.data["players"][str(ctx.author.id)] = {
             "mc_username": arg,
-            "mc_uuid": uuid
+            "mc_uuid": uuid,
+            "pfp": ("https://crafthead.net/avatar/" + uuid).replace("-","")
         }
-        pass
+        await ctx.reply(f"Player {arg} registered")
 
     @commands.command(aliases=["c"])
     async def create(self, ctx, *args):
