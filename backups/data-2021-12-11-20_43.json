@@ -13,6 +13,12 @@
     },
     "factions": {
         "Big PP Gang": {
+            "discord_info": {
+                "role_id": 919365714522021929,
+                "text_channel_id": 919365715495092225,
+                "voice_channel_id": 919365715172139069
+            },
+            "losses": 0,
             "owner": "138027430693568512",
             "players": {
                 "138027430693568512": {
@@ -20,33 +26,8 @@
                 }
             },
             "requests": {},
-             "wars": {},
-            "declarations": {},
-            "discord_info": {
-                "role_id": 919365714522021929,
-                "text_channel_id": 919365715495092225,
-                "voice_channel_id": 919365715172139069
-            },
             "victories": 0,
-            "losses": 0
-        },
-        "Bigger PP Gang": {
-            "owner": "405528235816779776",
-            "players": {
-                "405528235816779776": {
-                    "permission_level": 4
-                }
-            },
-            "wars": {},
-            "declarations": {},
-            "requests": {},
-            "discord_info": {
-                "text_channel_id": 919419233748795402,
-                "voice_channel_id": 919419233031553064,
-                "role_id": 919419232511471636
-            },
-            "victories": 0,
-            "losses": 0
+            "wars": {}
         }
     }
 }
