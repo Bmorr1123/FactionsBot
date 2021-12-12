@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import atexit, json, datetime, os, discord.ext.commands as commands
 from factions import Factions
+import discord
 
 
 '''
@@ -61,7 +62,8 @@ def main():
     config_file.close()
 
     # Bot stuff
-    bot = commands.Bot(command_prefix=config["prefix"])
+    intents = discord.Intents().all()
+    bot = commands.Bot(command_prefix=config["prefix"], intents=intents)
 
     # @bot.event
     # async def on_command_error(ctx, error):
