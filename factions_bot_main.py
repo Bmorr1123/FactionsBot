@@ -16,7 +16,7 @@ with open("data.json", "r") as file:
 
 def on_close():
     with open("data.json", "w") as file:
-        json.dump(data, file, indent=4, sort_keys=True)
+        json.dump(data, file, indent=4)
         print("Dumped data.")
     print("Closing bot")
 
@@ -63,9 +63,9 @@ def main():
     # Bot stuff
     bot = commands.Bot(command_prefix=config["prefix"])
 
-    #@bot.event
-    #async def on_command_error(ctx, error):
-    #    await ctx.send(error)
+    # @bot.event
+    # async def on_command_error(ctx, error):
+    #     await ctx.send(error)
 
     cogs = [Factions(bot, data)]
     for cog in cogs:

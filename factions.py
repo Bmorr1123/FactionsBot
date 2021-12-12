@@ -46,10 +46,10 @@ class Factions(commands.Cog):
 
     # ------------------------------------------------------ Non-commands ----------------------------------------------
 
-    def getMcId(self, mcUsername):
-        web = requests.get("https://playerdb.co/api/player/minecraft/" + mcUsername)
-        data = json.loads(web.content.decode())
-        if(data["success"]==True):
+    def getMcId(self, mc_username):
+        web = requests.get("https://playerdb.co/api/player/minecraft/" + mc_username)
+        data = str(json.loads(web.content.decode()))
+        if data["success"]:
             return data["data"]["player"]["id"]
         return None
 
@@ -58,7 +58,7 @@ class Factions(commands.Cog):
 
         # Role creation
         role = await channel.guild.create_role(
-            faction_name,
+            name=faction_name,
             color=discord.Color.from_rgb(
                 randint(0, 255),
                 randint(0, 255),
@@ -78,7 +78,7 @@ class Factions(commands.Cog):
 
         # Channel creation
         voice_channel = await channel.guild.create_voice_channel(
-            f"{faction_name.title()}-Voice",
+            f"{faction_name}",
             category=channel.category,
             overwrites=voice_overwrites,
             reason=f"{ctx.author.name} requested a new faction be created."
@@ -90,6 +90,7 @@ class Factions(commands.Cog):
             reason=f"{ctx.author.name} requested a new faction be created."
         )
 
+        # Adding it to the save
         self.data["factions"][faction_name] = {
             "owner": faction_owner,
             "players": {
@@ -98,7 +99,7 @@ class Factions(commands.Cog):
                 }
             },
             "wars": {},
-            "requests": [],
+            "requests": {},
             "discord_info": {
                 "text_channel_id": text_channel.id,
                 "voice_channel_id": voice_channel.id,
@@ -132,27 +133,51 @@ class Factions(commands.Cog):
         faction_name = " ".join(args)
 
         # Conditions
+        if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
+            await ctx.reply("Can't do that in this channel.")
+            return
+
         if faction_name in self.data["factions"]:
             await ctx.reply(f"That faction already exists!")
             return
 
-        if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
-            await ctx.reply("Can't do that in this channel.")
-            return
+        for faction in self.data["factions"].values():
+            if f"{ctx.author.id}" in faction["players"].keys():
+                await ctx.reply("You are already in a faction!")
+                return
 
         await self.create_faction(ctx, faction_name, str(ctx.author.id))
         await ctx.reply(f"You have successfully created the faction: \"{faction_name}\"")
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
-        pass
+        for name, faction in self.data["factions"].items():
+            if f"{ctx.author.id}" in faction["players"].keys():
+                await ctx.reply("You are already in a faction!")
+                return
 
     @commands.command(aliases=["j"])
     async def join(self, ctx, *args):
         faction_name = " ".join(args)
         if faction_name in self.data["factions"]:
             await ctx.send(f"Requested to join the faction \"{faction_name}\".")
-            self.data["factions"][faction_name]["requests"].append(ctx.author.id)
+            id = self.data["factions"][faction_name]["discord_info"]["text_channel_id"]
+            channel = self.bot.get_channel(id)
+            embed = discord.Embed(
+                title="User is requesting to join your faction!",
+                color=discord.Colour.from_rgb(255//2, 0, 255),
+                description=f"Would you like to accept <@{ctx.author.id}> into your faction?"
+            )
+            embed.set_image(url=f"{self.data['players'][str(ctx.author.id)]['pfp']}")
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+
+            confirmation_message: discord.Message = await channel.send(embed=embed)
+
+            await confirmation_message.add_reaction("✅")
+            await confirmation_message.add_reaction("❌")
+
+            self.data["factions"][faction_name]["requests"][str(confirmation_message.id)] = str(ctx.author.id)
+
         else:
             await ctx.send(f"Could not find the faction \"{faction_name}\"!")
         pass
@@ -171,6 +196,40 @@ class Factions(commands.Cog):
     @commands.check(check_if_admin)
     async def example(self, ctx, length: int = 0):
         pass
+
+    # --------------------------------------- Listeners ----------------------------------------------------------------
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        print(f"{payload.member.name} added {payload.emoji}")
+        faction_channels = {str(value["discord_info"]["text_channel_id"]): name for name, value in self.data["factions"].items()}
+        if str(payload.channel_id) not in faction_channels:
+            print("Not a valid channel")
+            return
+        faction_name = faction_channels[str(payload.channel_id)]
+        faction = self.data["factions"][faction_name]
+
+        if str(payload.message_id) in faction["requests"]:
+            print("Found the request")
+            candidate_id = int(faction["requests"][str(payload.message_id)])
+            print(f"{payload.member.id}")
+            print(self.bot.get_guild(payload.guild_id).get_member(payload.member.id))
+            if faction["players"][str(payload.member.id)]["permission_level"] > 0:
+                print(f"{payload.member.name} has permission to to accept/deny.")
+                nothing = False
+                if payload.emoji.name == "✅":
+                    print("W")
+                    faction["players"][candidate_id] = {
+                        "permission_level": 0
+                    }
+                elif payload.emoji.name == "❌":
+                    print(f"L {candidate_id}, {type(candidate_id)}")
+                    await discord.Member(id=int(candidate_id)).send(f"Sorry, you have been denied from joining {faction_name}.")
+                else:
+                    nothing = True
+                # if not nothing:
+                #     await self.bot.get_message(payload.message_id).delete()
+                #     del faction["requests"][str(payload.message_id)]
 
     # -------------------------------------- Voice Channel Management --------------------------------------------------
 
