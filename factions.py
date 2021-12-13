@@ -81,7 +81,7 @@ class Factions(commands.Cog):
             reason=f"{ctx.author.name} requested a new faction be created."
         )
 
-        self.bot.get_user(int(faction_owner)).add_roles(role)
+        await ctx.channel.guild.get_member(int(faction_owner)).add_roles(role)
 
         # Permissions Overwrites
         text_overwrites = {
@@ -160,6 +160,17 @@ class Factions(commands.Cog):
                 return
         await ctx.reply("Something went wrong. Please @Bmorr")
 
+    def is_registered(self, user):
+        id = 0
+        if isinstance(user, discord.User):
+            id = str(user.id)
+        elif isinstance(user, int):
+            id = str(user)
+        elif isinstance(user, str):
+            id = user
+
+        return id in self.data["players"]
+
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
     @commands.command(aliases=["r"])
@@ -184,6 +195,10 @@ class Factions(commands.Cog):
         faction_name = " ".join(args)
 
         # Conditions
+        if not self.is_registered(ctx.author):
+            await ctx.reply("You must be registered to use this command! Please try `.register`.")
+            return
+
         if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
             await ctx.reply("Can't do that in this channel.")
             return
@@ -202,8 +217,11 @@ class Factions(commands.Cog):
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
-
         pid = f"{ctx.author.id}"
+
+        if not self.is_registered(ctx.author):
+            await ctx.reply("You must be registered to use this command! Please try `.register`.")
+            return
 
         if not self.is_faction_channel(ctx.channel):
             await ctx.reply("You must be in faction chat to use this command!")
@@ -227,6 +245,10 @@ class Factions(commands.Cog):
     @commands.command(aliases=["j"])
     async def join(self, ctx, *args):
         faction_name = " ".join(args)
+
+        if not self.is_registered(ctx.author):
+            await ctx.reply("You must be registered to use this command! Please try `.register`.")
+            return
 
         if faction_name not in self.data["factions"]:
             await ctx.send(f"Could not find the faction \"{faction_name}\"!")
