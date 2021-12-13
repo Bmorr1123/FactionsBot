@@ -164,12 +164,14 @@ class Factions(commands.Cog):
         id = 0
         if isinstance(user, discord.User):
             id = str(user.id)
+        elif isinstance(user, discord.Member):
+            id = str(user.id)
         elif isinstance(user, int):
             id = str(user)
         elif isinstance(user, str):
             id = user
-
-        return id in self.data["players"]
+        print(id, type(id), self.data["players"].keys())
+        return id in self.data["players"].keys()
 
     # ------------------------------------------------------ Faction Management ----------------------------------------
 
