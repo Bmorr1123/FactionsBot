@@ -46,7 +46,7 @@ class Factions(commands.Cog):
 
     # ------------------------------------------------------ Non-commands ----------------------------------------------
 
-    def getMcId(self, mc_username):
+    def get_uuid(self, mc_username):
         web = requests.get("https://playerdb.co/api/player/minecraft/" + mc_username)
         data = json.loads(web.content.decode())
         if data["success"]:
@@ -56,6 +56,8 @@ class Factions(commands.Cog):
     def find_users_faction(self, user):
         id = 0
         if isinstance(user, discord.User):
+            id = str(user.id)
+        elif isinstance(user, discord.Member):
             id = str(user.id)
         elif isinstance(user, int):
             id = str(user)
@@ -129,7 +131,7 @@ class Factions(commands.Cog):
 
     def is_faction_channel(self, channel: discord.TextChannel):
         for faction, data in self.data["factions"].items():
-            if channel.id == data["discord_info"]["text_channel_id"]:
+            if str(channel.id) == str(data["discord_info"]["text_channel_id"]):
                 return True
         return False
 
@@ -170,17 +172,32 @@ class Factions(commands.Cog):
             id = str(user)
         elif isinstance(user, str):
             id = user
-        print(id, type(id), self.data["players"].keys())
         return id in self.data["players"].keys()
 
-    # ------------------------------------------------------ Faction Management ----------------------------------------
+    def get_user(self, user):
+        if not self.is_registered(user):
+            return None
+
+        id = None
+        if isinstance(user, discord.User):
+            id = str(user.id)
+        elif isinstance(user, discord.Member):
+            id = str(user.id)
+        elif isinstance(user, int):
+            id = str(user)
+        elif isinstance(user, str):
+            id = user
+
+        return self.data["players"][id]
+
+    # ------------------------------------------------------- User Commands --------------------------------------------
 
     @commands.command(aliases=["r"])
     async def register(self, ctx, arg):
         if str(ctx.author.id) in self.data["players"]:
             await ctx.reply(f"You have already registered as {self.data['players'][str(ctx.author.id)]['mc_username']}")
             return
-        uuid = self.getMcId(arg)
+        uuid = self.get_uuid(arg)
         if uuid is None:
             await ctx.reply(f"This user doesn't exist")
             return
@@ -188,34 +205,9 @@ class Factions(commands.Cog):
         self.data["players"][str(ctx.author.id)] = {
             "mc_username": arg,
             "mc_uuid": uuid,
-            "pfp": f"https://crafthead.net/avatar/{uuid.replace('-','')}"
+            "pfp": f"https://crafthead.net/avatar/{uuid.replace('-', '')}"
         }
         await ctx.reply(f"Player {arg} registered")
-
-    @commands.command(aliases=["c"])
-    async def create(self, ctx, *args):
-        faction_name = " ".join(args)
-
-        # Conditions
-        if not self.is_registered(ctx.author):
-            await ctx.reply("You must be registered to use this command! Please try `.register`.")
-            return
-
-        if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
-            await ctx.reply("Can't do that in this channel.")
-            return
-
-        if faction_name in self.data["factions"]:
-            await ctx.reply(f"That faction already exists!")
-            return
-
-        for faction in self.data["factions"].values():
-            if f"{ctx.author.id}" in faction["players"].keys():
-                await ctx.reply("You are already in a faction!")
-                return
-
-        await self.create_faction(ctx, faction_name, str(ctx.author.id))
-        await ctx.reply(f"You have successfully created the faction: \"{faction_name}\"")
 
     @commands.command(aliases=["l"])
     async def leave(self, ctx):
@@ -270,7 +262,7 @@ class Factions(commands.Cog):
 
         embed = discord.Embed(
             title="User is requesting to join your faction!",
-            color=discord.Colour.from_rgb(255//2, 0, 255),
+            color=discord.Colour.from_rgb(255 // 2, 0, 255),
             description=f"Would you like to accept <@{ctx.author.id}> into your faction?"
         )
 
@@ -283,6 +275,53 @@ class Factions(commands.Cog):
         await confirmation_message.add_reaction("❌")
 
         self.data["factions"][faction_name]["requests"][str(confirmation_message.id)] = str(ctx.author.id)
+
+    # ------------------------------------------------------ Faction Management ----------------------------------------
+
+    @commands.command(aliases=["c"])
+    async def create(self, ctx, *args):
+        faction_name = " ".join(args)
+
+        # Conditions
+        if not self.is_registered(ctx.author):
+            await ctx.reply("You must be registered to use this command! Please try `.register`.")
+            return
+
+        if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
+            await ctx.reply("Can't do that in this channel.")
+            return
+
+        if faction_name in self.data["factions"]:
+            await ctx.reply(f"That faction already exists!")
+            return
+
+        for faction in self.data["factions"].values():
+            if f"{ctx.author.id}" in faction["players"].keys():
+                await ctx.reply("You are already in a faction!")
+                return
+
+        await self.create_faction(ctx, faction_name, str(ctx.author.id))
+        await ctx.reply(f"You have successfully created the faction: \"{faction_name}\"")
+
+    @commands.command()
+    async def info(self, ctx, *args):
+        faction_name, faction_info = " ".join(args), {}
+
+        for name, faction in self.data["factions"].items():
+            if name.lower() == faction_name.lower():
+                faction_name = name
+                faction_info = faction
+
+        embed = discord.Embed(title=f"{faction_name} Information:")
+
+        owner = self.get_user(faction_info["owner"])
+        embed.set_author(name=owner["mc_username"], icon_url=owner["pfp"])
+        wr = faction_info["victories"]
+        if l := faction_info["losses"]:
+            wr /= l
+
+        embed.add_field(name="Win Rate:", value=wr)
+        embed.add_field(name="Member List:", value="\n".join(faction_info["players"]))
 
     @commands.command()
     async def kick(self, ctx, user: discord.User):
@@ -304,32 +343,32 @@ class Factions(commands.Cog):
                 await ctx.send(f"<@{pid}> kicked <@{cid}>!")
                 await ctx.message.delete()
 
-    @commands.command(aliases=["b"])
-    async def declare(self, ctx, *args):
-        faction_name = " ".join(args)
-        src_faction = self.find_users_faction(str(ctx.author.id))
-        if faction_name in self.data["factions"]:
-            await ctx.send(f"Requested to start a war \"{faction_name}\".")
-            id = self.data["factions"][faction_name]["discord_info"]["text_channel_id"]
-            channel = self.bot.get_channel(id)
-            embed = discord.Embed(
-                title=f"Would you like to accept a war with {src_faction}?",
-                color=discord.Colour.from_rgb(255 // 2, 0, 255),
-                #description=f"Would you like to accept a war with {src_faction}?"
-            )
-            embed.set_image(url=f"{self.data['players'][str(ctx.author.id)]['pfp']}")
-            embed.set_author(name=ctx.author.name + " is requesting to start a war!", icon_url=ctx.author.avatar_url)
-
-            confirmation_message: discord.Message = await channel.send(embed=embed)
-
-            await confirmation_message.add_reaction("✅")
-            await confirmation_message.add_reaction("❌")
-
-            self.data["factions"][faction_name]["requests"][str(confirmation_message.id)] = str(ctx.author.id)
-
-        else:
-            await ctx.send(f"Could not find the faction \"{faction_name}\"!")
-        pass
+    # @commands.command(aliases=["b"])
+    # async def declare(self, ctx, *args):
+    #     faction_name = " ".join(args)
+    #     src_faction = self.find_users_faction(str(ctx.author.id))
+    #     if faction_name in self.data["factions"]:
+    #         await ctx.send(f"Requested to start a war \"{faction_name}\".")
+    #         id = self.data["factions"][faction_name]["discord_info"]["text_channel_id"]
+    #         channel = self.bot.get_channel(id)
+    #         embed = discord.Embed(
+    #             title=f"Would you like to accept a war with {src_faction}?",
+    #             color=discord.Colour.from_rgb(255 // 2, 0, 255),
+    #             #description=f"Would you like to accept a war with {src_faction}?"
+    #         )
+    #         embed.set_image(url=f"{self.data['players'][str(ctx.author.id)]['pfp']}")
+    #         embed.set_author(name=ctx.author.name + " is requesting to start a war!", icon_url=ctx.author.avatar_url)
+    #
+    #         confirmation_message: discord.Message = await channel.send(embed=embed)
+    #
+    #         await confirmation_message.add_reaction("✅")
+    #         await confirmation_message.add_reaction("❌")
+    #
+    #         self.data["factions"][faction_name]["requests"][str(confirmation_message.id)] = str(ctx.author.id)
+    #
+    #     else:
+    #         await ctx.send(f"Could not find the faction \"{faction_name}\"!")
+    #     pass
 
     @commands.command(aliases=["p"])
     async def promote(self, ctx, user: discord.User):
@@ -341,7 +380,7 @@ class Factions(commands.Cog):
 
     # ---------------------------------------------- Admin Commands ----------------------------------------------------
 
-    @commands.command(aliases=["t"])
+    @commands.command(aliases=["test"])
     @commands.check(check_if_admin)
     async def example(self, ctx, length: int = 0):
         pass
