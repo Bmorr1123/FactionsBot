@@ -298,6 +298,9 @@ class Factions(commands.Cog):
 
     @commands.command()
     async def info(self, ctx, *args):
+        if len(args) == 0:
+            await self.list(ctx)
+            return
         faction_name, faction_info = " ".join(args), {}
 
         for name, faction in self.data["factions"].items():
@@ -309,7 +312,10 @@ class Factions(commands.Cog):
             await ctx.send(f"Couldn't find faction \"{faction_name}\"")
             return
 
-        embed = discord.Embed(title=f"{faction_name} Information:")
+        embed = discord.Embed(
+            title=f"{faction_name} Information:",
+            color=ctx.channel.guild.get_role(faction_info["discord_info"]["role_id"]).color
+        )
 
         owner = self.get_user(faction_info["owner"])
         embed.set_author(name=owner["mc_username"], icon_url=owner["pfp"])
@@ -324,6 +330,19 @@ class Factions(commands.Cog):
             value="\n".join([f"<@{player}>: {permission_tiers[info['permission_level']]}" for player, info in faction_info["players"].items()]),
             inline=False
         )
+
+        await ctx.send(embed=embed)
+
+    @commands.command()
+    async def list(self, ctx):
+        embed = discord.Embed(
+            title=f"Faction List:",
+            color=discord.Color.from_rgb(255, 255, 255)
+        )
+
+        for name, info in self.data["factions"].items():
+            value = f"<@{info['owner']}>"
+            embed.add_field(name=name, value=value, inline=False)
 
         await ctx.send(embed=embed)
 
