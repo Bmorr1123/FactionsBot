@@ -10,6 +10,15 @@ def check_if_admin(ctx):
     return ctx.message.author.id in [138027430693568512, 405528235816779776]
 
 
+permission_tiers = {
+    0: "Member",
+    1: "Officer",
+    2: "Executive",
+    3: "Co-Owner",
+    4: "Owner"
+}
+
+
 class Factions(commands.Cog):
     def __init__(self, bot, data):
         self.bot = bot
@@ -312,6 +321,11 @@ class Factions(commands.Cog):
                 faction_name = name
                 faction_info = faction
 
+        if not faction_info:
+            await ctx.send(f"Couldn't find faction \"{faction_name}\"")
+            return
+
+        pp(faction_info)
         embed = discord.Embed(title=f"{faction_name} Information:")
 
         owner = self.get_user(faction_info["owner"])
@@ -320,8 +334,15 @@ class Factions(commands.Cog):
         if l := faction_info["losses"]:
             wr /= l
 
-        embed.add_field(name="Win Rate:", value=wr)
-        embed.add_field(name="Member List:", value="\n".join(faction_info["players"]))
+        embed.add_field(name="Win Rate:", value=wr, inline=True)
+
+        embed.add_field(
+            name="Member List:",
+            value="\n".join([f"<@{player}>: {permission_tiers[info['permission_level']]}" for player, info in faction_info["players"].items()]),
+            inline=False
+        )
+
+        await ctx.send(embed=embed)
 
     @commands.command()
     async def kick(self, ctx, user: discord.User):
