@@ -62,17 +62,19 @@ class Factions(commands.Cog):
             return data["data"]["player"]["id"]
         return None
 
-    def find_users_faction(self, user):
-        id = 0
+    def get_discord_id(self, user):
         if isinstance(user, discord.User):
-            id = str(user.id)
+            return str(user.id)
         elif isinstance(user, discord.Member):
-            id = str(user.id)
+            return str(user.id)
         elif isinstance(user, int):
-            id = str(user)
+            return str(user)
         elif isinstance(user, str):
-            id = user
+            return user
+        return None
 
+    def find_users_faction(self, user):
+        id = self.get_discord_id(user)
         for name, faction in self.data["factions"].items():
             if id in faction["players"].keys():
                 return name
@@ -165,38 +167,20 @@ class Factions(commands.Cog):
                     if new_cpl == 4:
                         faction["owner"] = cid
                         players[pid]["permission_level"] -= 1
-                    await ctx.reply(f"<@{cid}> has been {action}d to level {new_cpl}")
+                    await ctx.reply(f"<@{cid}> has been {action}d to level {new_cpl} ({permission_tiers[new_cpl]})")
                 else:
                     await ctx.reply(f"<@{cid}> cannot be {action}d to level {new_cpl}!")
                 return
         await ctx.reply("Something went wrong. Please @Bmorr")
 
     def is_registered(self, user):
-        id = 0
-        if isinstance(user, discord.User):
-            id = str(user.id)
-        elif isinstance(user, discord.Member):
-            id = str(user.id)
-        elif isinstance(user, int):
-            id = str(user)
-        elif isinstance(user, str):
-            id = user
+        id = self.get_discord_id(user)
         return id in self.data["players"].keys()
 
     def get_user(self, user):
         if not self.is_registered(user):
             return None
-
-        id = None
-        if isinstance(user, discord.User):
-            id = str(user.id)
-        elif isinstance(user, discord.Member):
-            id = str(user.id)
-        elif isinstance(user, int):
-            id = str(user)
-        elif isinstance(user, str):
-            id = user
-
+        id = self.get_discord_id(user)
         return self.data["players"][id]
 
     # ------------------------------------------------------- User Commands --------------------------------------------
@@ -325,7 +309,6 @@ class Factions(commands.Cog):
             await ctx.send(f"Couldn't find faction \"{faction_name}\"")
             return
 
-        pp(faction_info)
         embed = discord.Embed(title=f"{faction_name} Information:")
 
         owner = self.get_user(faction_info["owner"])
@@ -363,6 +346,73 @@ class Factions(commands.Cog):
                 del faction["players"][cid]
                 await ctx.send(f"<@{pid}> kicked <@{cid}>!")
                 await ctx.message.delete()
+
+    @commands.command()
+    async def delete(self, ctx, *args):
+        faction_name = " ".join(args)
+
+        # Conditions
+        if ctx.channel.category.name.upper() != "MINECRAFT SERVER":
+            await ctx.reply("Can't do that in this channel.")
+            return
+
+        if faction_name not in self.data["factions"]:
+            await ctx.reply(f"That faction doesn't exist!")
+            return
+        faction = self.data["factions"][faction_name]
+        if faction["owner"] != str(ctx.author.id):
+            await ctx.reply(f"You do not own that faction!")
+            return
+
+        await ctx.channel.guild.get_channel(faction["discord_info"]["voice_channel_id"]).delete()
+        await ctx.channel.guild.get_channel(faction["discord_info"]["text_channel_id"]).delete()
+        await ctx.channel.guild.get_role(faction["discord_info"]["role_id"]).delete()
+
+        del self.data["factions"][faction_name]
+        await ctx.reply(f"You have successfully deleted the faction: \"{faction_name}\"")
+
+    @commands.command()
+    async def color(self, ctx, r: int, g: int, b: int):
+        faction = self.find_users_faction(ctx.author)
+        if faction:
+            faction = self.data["factions"][faction]
+        else:
+            await ctx.send(f"Can't find faction for <@{ctx.author.id}>!")
+            return
+
+        if faction["players"][self.get_discord_id(ctx.author)]["permission_level"] < 3:
+            await ctx.send(f"<@{ctx.author.id}> does not have permission to do this.")
+            return
+
+        await ctx.channel.guild.get_role(faction["discord_info"]["role_id"]).edit(color=discord.Color.from_rgb(r, g, b))
+        await ctx.reply(f"Successfully changed faction color!")
+
+    @commands.command()
+    async def rename(self, ctx, *args):
+        faction_name = " ".join(args)
+
+        if faction_name in self.data["factions"].keys():
+            await ctx.send(f"A faction by this name already exists!")
+            return
+
+        faction = self.find_users_faction(ctx.author)
+        og_name = faction
+        if faction:
+            faction = self.data["factions"][faction]
+        else:
+            await ctx.send(f"Can't find faction for <@{ctx.author.id}>!")
+            return
+
+        if faction["players"][self.get_discord_id(ctx.author)]["permission_level"] < 3:
+            await ctx.send(f"<@{ctx.author.id}> does not have permission to do this.")
+            return
+
+        await ctx.channel.guild.get_channel(faction["discord_info"]["voice_channel_id"]).edit(name=faction_name)
+        await ctx.channel.guild.get_channel(faction["discord_info"]["text_channel_id"]).edit(name=faction_name.lower() + " chat")
+        await ctx.channel.guild.get_role(faction["discord_info"]["role_id"]).edit(name=faction_name)
+        self.data["factions"][faction_name] = faction
+        del self.data["factions"][og_name]
+        await ctx.reply(f"Successfully renamed \"{og_name}\" to \"{faction_name}\"!")
 
     # @commands.command(aliases=["b"])
     # async def declare(self, ctx, *args):
@@ -430,7 +480,9 @@ class Factions(commands.Cog):
         channel = self.bot.get_channel(payload.channel_id)
         if faction["players"][str(payload.member.id)]["permission_level"] > 0:
             nothing = False
-            if payload.emoji.name == "✅":
+            if self.find_users_faction(candidate_id):
+                await channel.send(f"<@{candidate_id}> already joined another faction!")
+            elif payload.emoji.name == "✅":
                 faction["players"][str(candidate_id)] = {
                     "permission_level": 0
                 }
