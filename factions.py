@@ -341,7 +341,7 @@ class Factions(commands.Cog):
         )
 
         for name, info in self.data["factions"].items():
-            value = f"<@{info['owner']}>"
+            value = f"Owner: <@{info['owner']}>\nMember Count: {len(info['players'])}"
             embed.add_field(name=name, value=value, inline=False)
 
         await ctx.send(embed=embed)
@@ -491,6 +491,7 @@ class Factions(commands.Cog):
         faction = self.data["factions"][faction_name]
 
         if str(payload.message_id) not in faction["requests"]:
+            print("Shoulda worked")
             return
         if str(payload.member.id) not in faction["players"]:
             return
@@ -525,7 +526,6 @@ class Factions(commands.Cog):
             for emoji in emojis:
                 if emoji.name == "0head":
                     await ctx.add_reaction(emoji)
-
 
     # @commands.has_permissions(manage_channels=True)
     # @commands.Cog.listener()
