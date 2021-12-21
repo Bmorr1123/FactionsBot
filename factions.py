@@ -519,13 +519,7 @@ class Factions(commands.Cog):
 
     # -------------------------------------- Voice Channel Management --------------------------------------------------
 
-    @commands.Cog.listener()
-    async def on_message(self, ctx):
-        if ctx.author.id == 405528235816779776:
-            emojis = await ctx.channel.guild.fetch_emojis()
-            for emoji in emojis:
-                if emoji.name == "0head":
-                    await ctx.add_reaction(emoji)
+
 
     # @commands.has_permissions(manage_channels=True)
     # @commands.Cog.listener()
