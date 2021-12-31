@@ -47,7 +47,7 @@ class Factions(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await ctx.reply("Pong!")
+        await ctx.reply(f"Ponged in {self.bot.latency}!")
 
     @commands.command()
     async def bing(self, ctx):
