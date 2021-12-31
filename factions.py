@@ -50,6 +50,10 @@ class Factions(commands.Cog):
         await ctx.reply("Pong!")
 
     @commands.command()
+    async def bing(self, ctx):
+        await ctx.reply("Bong!")
+
+    @commands.command()
     async def spongebob(self, ctx):
         await ctx.reply("The greatest show of all time!")
 
