@@ -2,6 +2,7 @@
 import discord
 import requests
 import json
+import time
 from discord.ext import commands
 from random import randint
 from pprint import pprint as pp
@@ -47,7 +48,13 @@ class Factions(commands.Cog):
 
     @commands.command()
     async def ping(self, ctx):
-        await ctx.reply(f"Ponged in {round(self.bot.latency * 1000)} ms!")
+        """Get the bot's current websocket and API latency."""
+        start_time = time.time()
+        message = await ctx.send("Testing Ping...")
+        end_time = time.time()
+
+        await message.edit(
+            content=f"Pong! {round(self.bot.latency * 1000)}ms\nAPI: {round((end_time - start_time) * 1000)}ms")
 
     @commands.command()
     async def bing(self, ctx):
