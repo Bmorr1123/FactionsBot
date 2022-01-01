@@ -414,6 +414,14 @@ class Factions(commands.Cog):
         await ctx.channel.guild.get_role(faction["discord_info"]["role_id"]).edit(color=discord.Color.from_rgb(r, g, b))
         await ctx.reply(f"Successfully changed faction color!")
 
+    @commands.Cog.listener()
+    async def on_message(self, ctx):
+        if ctx.author.id == 405528235816779776:
+            emojis = await ctx.channel.guild.fetch_emojis()
+            for emoji in emojis:
+                if emoji.name == "0head":
+                    await ctx.add_reaction(emoji)
+
     @commands.command()
     async def rename(self, ctx, *args):
         faction_name = " ".join(args)
@@ -524,8 +532,6 @@ class Factions(commands.Cog):
                 message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
                 await message.delete()
                 del faction["requests"][str(payload.message_id)]
-
-
 
     # -------------------------------------- Voice Channel Management --------------------------------------------------
 
