@@ -525,6 +525,14 @@ class Factions(commands.Cog):
                 await message.delete()
                 del faction["requests"][str(payload.message_id)]
 
+    @commands.Cog.listener()
+    async def on_message(self, ctx):
+        if ctx.author.id == 405528235816779776:
+            emojis = await ctx.channel.guild.fetch_emojis()
+            for emoji in emojis:
+                if emoji.name == "0head":
+                    await ctx.add_reaction(emoji)
+
     # -------------------------------------- Voice Channel Management --------------------------------------------------
 
 
