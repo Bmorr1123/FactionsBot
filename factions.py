@@ -46,19 +46,16 @@ class Factions(commands.Cog):
         for message in reversed(messages):
             await message.delete()
 
-    @commands.command()
+    @commands.command(aliases=["aing", "bing", "cing", "ding", "eing", "fing", "ging", "hing", "iing", "jing", "king", "ling", "ming", "ning", "oing", "qing", "ring", "sing", "ting", "uing", "ving", "wing", "xing", "ying", "zing"])
     async def ping(self, ctx):
         """Get the bot's current websocket and API latency."""
         start_time = time.time()
         message = await ctx.send("Testing Ping...")
         end_time = time.time()
+        cont: str = ctx.message.content
 
         await message.edit(
-            content=f"Pong! {round(self.bot.latency * 1000)}ms\nAPI: {round((end_time - start_time) * 1000)}ms")
-
-    @commands.command()
-    async def bing(self, ctx):
-        await ctx.reply("Bong!")
+            content=f"{cont[1].upper()}ong! {round(self.bot.latency * 1000)}ms\nAPI: {round((end_time - start_time) * 1000)}ms")
 
     @commands.command()
     async def spongebob(self, ctx):
