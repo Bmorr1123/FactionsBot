@@ -417,7 +417,7 @@ class Factions(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, ctx):
         string: str = ctx.content
-        if string.startswith(".") and (ingdex := string.find("ing")):
+        if string.startswith(".") and (ingdex := string.rfind("ing")):
             cons = string[1:ingdex]
             """Get the bot's current websocket and API latency."""
             start_time = time.time()
