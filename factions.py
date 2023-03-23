@@ -431,6 +431,7 @@ class Factions(commands.Cog):
                 if emoji.name == "0head":
                     await ctx.add_reaction(emoji)
 
+
     @commands.command()
     async def rename(self, ctx, *args):
         faction_name = " ".join(args)
